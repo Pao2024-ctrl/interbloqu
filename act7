@@ -1,0 +1,108 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+// Variables globales
+int numProcesos, numRecursos;
+vector<int> recursosDisponibles;       // Recursos disponibles en el sistema
+vector<vector<int>> matrizAsignacion;  // Recursos asignados a cada proceso
+vector<vector<int>> matrizSolicitud;   // Recursos solicitados por cada proceso
+
+// Función para verificar si hay un interbloqueo
+bool detectarInterbloqueo() {
+    vector<bool> terminado(numProcesos, false);
+    vector<int> trabajo = recursosDisponibles; // Copia de recursos disponibles
+    queue<int> procesosListos;
+
+    // Busca procesos que puedan ejecutarse
+    for (int i = 0; i < numProcesos; ++i) {
+        bool puedeEjecutar = true;
+        for (int j = 0; j < numRecursos; ++j) {
+            if (matrizSolicitud[i][j] > trabajo[j]) {
+                puedeEjecutar = false;
+                break;
+            }
+        }
+        if (puedeEjecutar) {
+            procesosListos.push(i);
+            terminado[i] = true;
+            for (int k = 0; k < numRecursos; ++k) {
+                trabajo[k] += matrizAsignacion[i][k];
+            }
+        }
+    }
+
+    // Proceso de detección
+    while (!procesosListos.empty()) {
+        int proceso = procesosListos.front();
+        procesosListos.pop();
+        for (int j = 0; j < numRecursos; ++j) {
+            trabajo[j] += matrizAsignacion[proceso][j];
+        }
+        for (int i = 0; i < numProcesos; ++i) {
+            if (!terminado[i]) {
+                bool puedeEjecutar = true;
+                for (int j = 0; j < numRecursos; ++j) {
+                    if (matrizSolicitud[i][j] > trabajo[j]) {
+                        puedeEjecutar = false;
+                        break;
+                    }
+                }
+                if (puedeEjecutar) {
+                    procesosListos.push(i);
+                    terminado[i] = true;
+                    for (int k = 0; k < numRecursos; ++k) {
+                        trabajo[k] += matrizAsignacion[i][k];
+                    }
+                }
+            }
+        }
+    }
+
+    // Verificar si hay procesos no terminados
+    for (int i = 0; i < numProcesos; ++i) {
+        if (!terminado[i]) {
+            return true; // Hay interbloqueo
+        }
+    }
+    return false; // No hay interbloqueo
+}
+
+// Función principal
+int main() {
+    cout << "Ingrese el número de procesos y recursos: ";
+    cin >> numProcesos >> numRecursos;
+
+    recursosDisponibles.resize(numRecursos);
+    matrizAsignacion.resize(numProcesos, vector<int>(numRecursos));
+    matrizSolicitud.resize(numProcesos, vector<int>(numRecursos));
+
+    // Ingresar recursos disponibles
+    cout << "Ingrese la cantidad de recursos disponibles:\n";
+    for (int i = 0; i < numRecursos; ++i) {
+        cin >> recursosDisponibles[i];
+    }
+
+    // Ingresar matriz de asignación
+    cout << "Ingrese la matriz de asignación (recursos asignados a cada proceso):\n";
+    for (int i = 0; i < numProcesos; ++i)
+        for (int j = 0; j < numRecursos; ++j)
+            cin >> matrizAsignacion[i][j];
+
+    // Ingresar matriz de solicitud
+    cout << "Ingrese la matriz de solicitud (recursos solicitados por cada proceso):\n";
+    for (int i = 0; i < numProcesos; ++i)
+        for (int j = 0; j < numRecursos; ++j)
+            cin >> matrizSolicitud[i][j];
+
+    // Detección de interbloqueo
+    if (detectarInterbloqueo()) {
+        cout << "Se detectó un interbloqueo en el sistema.\n";
+    } else {
+        cout << "No hay interbloqueo.\n";
+    }
+
+    return 0;
+}
